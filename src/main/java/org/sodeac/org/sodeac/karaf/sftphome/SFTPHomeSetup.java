@@ -64,10 +64,10 @@ public class SFTPHomeSetup
 	@ObjectClassDefinition(name=SERVICE_PID, description="Configuration Setup SFTP",pid=SFTPHomeSetup.SERVICE_PID)
 	interface Config
 	{
-		@AttributeDefinition(name="homeroot",description = "directory contains homedirectories for user" , defaultValue="./data/home" ,type=AttributeType.STRING)
+		@AttributeDefinition(name="homeroot",description = "directory contains private homedirectories of users" , defaultValue="./data/home" ,type=AttributeType.STRING)
 		String homeroot();
 		
-		@AttributeDefinition(name="rolesecureshell",description = "role for users with access to secureshell" , defaultValue="sshconsole" ,type=AttributeType.STRING)
+		@AttributeDefinition(name="rolesecureshell",description = "role for users with access to secure shell" , defaultValue="sshconsole" ,type=AttributeType.STRING)
 		String rolesecureshell();
 		
 		@AttributeDefinition(name="rolehomedir",description = "role for users with private home directory" , defaultValue="sftphome" ,type=AttributeType.STRING)
