@@ -32,12 +32,12 @@ A valid OSGi configuration is requrired to reconfigure SshServer.
 Additionally the **_sshRole_** defined in configuration **_org.apache.karaf.shell_** must assigned to users (by default **_ssh_**) !
 Users with both roles ( defined in **_rolehomedir_** and **_rolekarafbasedir_** ) have access to karaf base directory.
 
-## Example installation on vanilla Karaf 4.2.4 with PropertiesLoginModule
+## Example installation on vanilla Karaf 4.2.10 with PropertiesLoginModule
 
 ```
 # install
 feature:install scr
-bundle:install -s mvn:org.sodeac/org.sodeac.karaf.sftphome/1.0.0
+bundle:install -s mvn:org.sodeac/org.sodeac.karaf.sftphome/1.1.0
 
 # create special role for sftp users with private home directory
 jaas:realm-manage --index 1
