@@ -7,7 +7,7 @@ This bundle enables private sftp home directories for various karaf users.
 feature:install scr
 ```
 
-## Install ( Apache Karaf 4.2.3+ )
+## Install ( Apache Karaf 4.2.3-4.2.8 )
 
 ```
 bundle:install -s mvn:org.sodeac/org.sodeac.karaf.sftphome/1.0.0
