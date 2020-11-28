@@ -4,7 +4,7 @@
   
   <groupId>org.sodeac</groupId>
   <artifactId>org.sodeac.karaf.sftphome</artifactId>
-  <version>1.0.0</version>
+  <version>1.1.0</version>
   <name>Karaf SFTP Home Setup</name>
   <description>Configuration extension for Karaf SSH Server</description>
   <packaging>bundle</packaging>
@@ -12,7 +12,7 @@
  <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <jdk.version>1.8</jdk.version>
-    <bundle.version>1.0.0</bundle.version>
+    <bundle.version>1.1.0</bundle.version>
   </properties>
   
   <dependencies>
@@ -42,13 +42,23 @@
     </dependency>
     <dependency>
       <groupId>org.apache.sshd</groupId>
-      <artifactId>sshd-core</artifactId>
-      <version>1.7.0</version>
+      <artifactId>sshd-osgi</artifactId>
+      <version>2.5.1</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.sshd</groupId>
+      <artifactId>sshd-scp</artifactId>
+      <version>2.5.1</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.sshd</groupId>
+      <artifactId>sshd-sftp</artifactId>
+      <version>2.5.1</version>
     </dependency>
     <dependency>
 	  <groupId>org.apache.karaf.shell</groupId>
 	  <artifactId>org.apache.karaf.shell.ssh</artifactId>
-	  <version>4.2.3</version>
+	  <version>4.2.10</version>
 	</dependency>
   </dependencies>
   
@@ -70,15 +80,18 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
-        <version>3.0.0</version>
+        <version>3.1.1</version>
+        <configuration>
+            <source>${jdk.version}</source>
+        </configuration>
         <executions>
-	        <execution>
-	          <id>attach-javadocs</id>
-	          <goals>
-	            <goal>jar</goal>
-	          </goals>
-	        </execution>
-	     </executions>
+          <execution>
+            <id>attach-javadocs</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -106,7 +119,7 @@
         <groupId>org.apache.felix</groupId>
         <artifactId>maven-bundle-plugin</artifactId>
         <extensions>true</extensions>
-        <version>4.1.0</version>
+        <version>4.2.1</version>
         <configuration>
           <instructions>
           	<Bundle-SymbolicName>${project.artifactId};singleton:=true</Bundle-SymbolicName>
@@ -118,7 +131,7 @@
             	org.sodeac.org.sodeac.karaf.sftphome
             </Private-Package>
             <Import-Package>
-            	org.apache.karaf*;version="[4.2.3,4.3)",
+            	org.apache.karaf*;version="[4.2.10,4.3)",
                 *
             </Import-Package>
           </instructions>

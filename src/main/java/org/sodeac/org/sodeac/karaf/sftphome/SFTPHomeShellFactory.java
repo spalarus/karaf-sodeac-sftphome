@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2019 Sebastian Palarus
+ *  Copyright (c) 2019, 2020 Sebastian Palarus
  *  
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
  */
 package org.sodeac.org.sodeac.karaf.sftphome;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -32,16 +31,16 @@ import org.apache.karaf.shell.api.console.SessionFactory;
 import org.apache.karaf.shell.ssh.KarafJaasAuthenticator;
 import org.apache.karaf.shell.ssh.SshTerminal;
 import org.apache.karaf.shell.support.ShellUtil;
-import org.apache.sshd.common.Factory;
-import org.apache.sshd.server.Command;
 import org.apache.sshd.server.Environment;
 import org.apache.sshd.server.ExitCallback;
-import org.apache.sshd.server.SessionAware;
+import org.apache.sshd.server.channel.ChannelSession;
+import org.apache.sshd.server.command.Command;
 import org.apache.sshd.server.session.ServerSession;
+import org.apache.sshd.server.shell.ShellFactory;
 
 // based on https://github.com/apache/karaf/tree/master/shell/ssh
 
-public class SFTPHomeShellFactory implements Factory<Command> 
+public class SFTPHomeShellFactory implements ShellFactory
 {
 	private SessionFactory sessionFactory;
 	private String[] sshRoles;
@@ -65,12 +64,13 @@ public class SFTPHomeShellFactory implements Factory<Command>
 		}
 	}
 	
-	public Command create() 
+	@Override
+	public Command createShell(ChannelSession channelSession)
 	{
 		return new ShellImpl();
 	}
 	
-	public class ShellImpl implements Command, SessionAware 
+	public class ShellImpl implements Command
 	{
 		private InputStream in;
 		private OutputStream out;
@@ -101,16 +101,12 @@ public class SFTPHomeShellFactory implements Factory<Command>
 			this.callback = callback;
 		}
 
-		public void setSession(ServerSession session) 
+		public void start(ChannelSession channelSession, Environment environment) throws IOException
 		{
-			this.session = session;
-		}
-		
-		public void start(final Environment env) throws IOException 
-		{
+			this.session = channelSession.getServerSession();
 			try
 			{
-				final Subject subject = ShellImpl.this.session != null ? ShellImpl.this.session.getAttribute(KarafJaasAuthenticator.SUBJECT_ATTRIBUTE_KEY) : null;
+				final Subject subject = session.getAttribute(KarafJaasAuthenticator.SUBJECT_ATTRIBUTE_KEY);
 				if(subject != null)
 				{
 					boolean hasCorrectRole = false;
@@ -142,12 +138,12 @@ public class SFTPHomeShellFactory implements Factory<Command>
 					}
 				}
 				
-				String encoding = getEncoding(env);
-				terminal = new SshTerminal(env, in, out, encoding);
+				String encoding = getEncoding(environment);
+                terminal = new SshTerminal(environment, in, out, encoding);
 				final PrintStream pout = new PrintStream(terminal.output(), true, encoding);
 				final PrintStream perr = err instanceof PrintStream ? (PrintStream) err : out == err ? pout : new PrintStream(err, true, encoding);
 				shell = sessionFactory.create(in, pout,perr, terminal, encoding, this::destroy);
-				for (Map.Entry<String, String> e : env.getEnv().entrySet())
+				for (Map.Entry<String, String> e : environment.getEnv().entrySet())
 				{
 					shell.put(e.getKey(), e.getValue());
 				}
@@ -163,19 +159,16 @@ public class SFTPHomeShellFactory implements Factory<Command>
 			if (!closed) 
 			{
 				closed = true;
-				flush(out, err);
-				close(in, out, err);
 				callback.onExit(0);
 			}
 		}
+
+		@Override
+		public void destroy(ChannelSession channel) throws Exception 
+		{
+			destroy();
+		}
 	}
-	
-	/**
-	 * Get the default encoding.  Will first look at the LC_CTYPE environment variable, then the input.encoding
-	 * system property, then the default charset according to the JVM.
-	 *
-	 * @return The default encoding to use when none is specified.
-	 */
 	public static String getEncoding(Environment env) 
 	{
 		// LC_CTYPE is usually in the form en_US.UTF-8
@@ -188,13 +181,6 @@ public class SFTPHomeShellFactory implements Factory<Command>
 		return System.getProperty("input.encoding", Charset.defaultCharset().name());
 	}
 	
-	/**
-	 * Parses the LC_CTYPE value to extract the encoding according to the POSIX standard, which says that the LC_CTYPE
-	 * environment variable may be of the format <code>[language[_territory][.codeset][@modifier]]</code>
-	 *
-	 * @param ctype The ctype to parse, may be null
-	 * @return The encoding, if one was present, otherwise null
-	 */
 	static String extractEncodingFromCtype(String ctype) 
 	{
 		if (ctype != null && ctype.indexOf('.') > 0) 
@@ -210,35 +196,5 @@ public class SFTPHomeShellFactory implements Factory<Command>
 			}
 		}
 		return null;
-	}
-	
-	private static void flush(OutputStream... streams) 
-	{
-		for (OutputStream s : streams) 
-		{
-			try 
-			{
-				s.flush();
-			} 
-			catch (IOException e) 
-			{
-				// Ignore
-			}
-		}
-	}
-	
-	private static void close(Closeable... closeables) 
-	{
-		for (Closeable c : closeables) 
-		{
-			try 
-			{
-				c.close();
-			} 
-			catch (Exception e) 
-			{
-				// Ignore
-			}
-		}
 	}
 }

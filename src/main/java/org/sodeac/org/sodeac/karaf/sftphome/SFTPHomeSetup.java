@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2019 Sebastian Palarus
+ *  Copyright (c) 2019, 2020 Sebastian Palarus
  *  
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -26,13 +26,12 @@ import java.util.Set;
 
 import org.apache.karaf.shell.api.console.SessionFactory;
 import org.apache.karaf.shell.ssh.ShellCommand;
-import org.apache.sshd.common.Factory;
-import org.apache.sshd.common.NamedFactory;
 import org.apache.sshd.common.file.FileSystemFactory;
-import org.apache.sshd.server.Command;
-import org.apache.sshd.server.CommandFactory;
 import org.apache.sshd.server.SshServer;
+import org.apache.sshd.server.command.CommandFactory;
 import org.apache.sshd.server.scp.ScpCommandFactory;
+import org.apache.sshd.server.shell.ShellFactory;
+import org.apache.sshd.server.subsystem.SubsystemFactory;
 import org.apache.sshd.server.subsystem.sftp.SftpSubsystemFactory;
 import org.osgi.framework.ServiceReference;
 import org.osgi.service.component.ComponentContext;
@@ -210,7 +209,7 @@ public class SFTPHomeSetup
 			
 			sshServer.setShellFactory(new SFTPHomeShellFactory(sessionFactory, this.properties,new Class[] {org.apache.karaf.jaas.boot.principal.RolePrincipal.class}));
 			sshServer.setFileSystemFactory(new SFTPHomeFileSystemFactory(this.properties,new Class[] {org.apache.karaf.jaas.boot.principal.RolePrincipal.class}));
-			sshServer.setCommandFactory(new ScpCommandFactory.Builder().withDelegate(cmd -> new ShellCommand(sessionFactory, cmd)).build());
+			sshServer.setCommandFactory(new ScpCommandFactory.Builder().withDelegate((channel, cmd) -> new ShellCommand(sessionFactory, cmd)).build());
 			sshServer.setSubsystemFactories(Collections.singletonList(new SftpSubsystemFactory()));
 			
 			managedServerIndex.put(sshServer, managedSSHServer);
@@ -236,10 +235,10 @@ public class SFTPHomeSetup
 	
 	private class ManagedSSHServer
 	{
-		private Factory<Command> originalShellFactory;
+		private ShellFactory originalShellFactory;
 		private FileSystemFactory originalFileSystemFactory;
 		private CommandFactory originalCommandFactory;
-		private List<NamedFactory<Command>> originalSubsystemFactories;
+		private List<SubsystemFactory> originalSubsystemFactories;
 	}
 	
 	protected static String[] getPropertyStringArray(Map<String, ?> properties, String key)

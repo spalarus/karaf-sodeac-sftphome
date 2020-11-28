@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2019 Sebastian Palarus
+ *  Copyright (c) 2019, 2020 Sebastian Palarus
  *  
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ import org.apache.karaf.jaas.boot.principal.UserPrincipal;
 import org.apache.karaf.shell.ssh.KarafJaasAuthenticator;
 import org.apache.sshd.common.file.FileSystemFactory;
 import org.apache.sshd.common.file.root.RootedFileSystemProvider;
-import org.apache.sshd.common.session.Session;
+import org.apache.sshd.common.session.SessionContext;
 
 // based on https://github.com/apache/karaf/tree/master/shell/ssh
 
@@ -77,7 +77,20 @@ public class SFTPHomeFileSystemFactory implements FileSystemFactory
 	private String homeRootPath;
 
 	@Override
-	public FileSystem createFileSystem(Session session) throws IOException 
+	public FileSystem createFileSystem(SessionContext session) throws IOException 
+	{
+		Path home = getUserHomeDir(session);
+		
+		if (Files.notExists(home)) 
+		{
+			Files.createDirectories(home); 
+		}
+		
+		return new RootedFileSystemProvider().newFileSystem(home,Collections.emptyMap());
+	}
+
+	@Override
+	public Path getUserHomeDir(SessionContext session) throws IOException 
 	{
 		boolean hasRoleHomeDir = false;
 		boolean hasRoleKarafRootDir = false;
@@ -119,7 +132,7 @@ public class SFTPHomeFileSystemFactory implements FileSystemFactory
 		
 		if(hasRoleKarafRootDir)
 		{
-			return new RootedFileSystemProvider().newFileSystem(Paths.get(System.getProperty("karaf.base")),Collections.emptyMap());
+			return Paths.get(System.getProperty("karaf.base"));
 		}
 		
 		if(!subject.getPrincipals(UserPrincipal.class).iterator().hasNext())
@@ -141,7 +154,7 @@ public class SFTPHomeFileSystemFactory implements FileSystemFactory
 			Files.createDirectories(home); 
 		}
 		
-		return new RootedFileSystemProvider().newFileSystem(home,Collections.emptyMap());
+		return home;
 	}
 
 }
